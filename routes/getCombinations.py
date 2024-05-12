@@ -1,26 +1,26 @@
 from fastapi import APIRouter
 from typing import List
-from itertools import product
+from collections import Counter
 
 from models.quize import Question
 
 router = APIRouter(
-    tags=["GET combinations"]
+    tags=["GET results"]
 )
 
 
-@router.post("/combinations/")
-async def combinations(questions: List[Question]):
-    options = [range(len(q.answers)) for q in questions]
-    combos = list(product(*options))
-
+@router.post("/results/") 
+async def process_answers(questions: List[Question]): 
     results = []
-    for combo in combos:
-        message = []
-        for i, index in enumerate(combo):
-            # theme = questions[i].question.split()[2]
-            choice = questions[i].answers[index].description.split()[1]
-            message.append(f"Тип {choice}<br/>")
-        results.append({'combination': combo, 'result': ''.join(message)})
 
-    return {"combinations": results}
+    for question in questions:
+        for answer in question.answers:
+            if answer.value:
+                if hasattr(answer, 'types'):
+                    results.extend(answer.types)
+
+    word_counts = Counter(results)
+    
+    user_type = word_counts.most_common(1)[0][0]
+
+    return user_type
